@@ -32,7 +32,7 @@ rep('<meta name="viewport" content="width=device-width,initial-scale=1">',
 # 2) 서버 없이 도는 api 계층으로 교체 (원본 계약 /api/* 그대로)
 rep('<script src="/vendor/lightweight-charts.js"></script>\n<script src="/static/flowlib.js"></script>\n<script src="/static/chartlib.js"></script>',
     '<script src="vendor/lightweight-charts-4.2.0.js"></script>\n<script src="static/flowlib.js"></script>\n<script src="static/chartlib.js"></script>\n'
-    '<script src="js/rules.js"></script>\n<script src="js/ind.js"></script>\n<script src="js/scan.js"></script>\n<script src="js/api.js"></script>')
+    '<script src="js/rules.js"></script>\n<script src="js/ind.js"></script>\n<script src="js/scan.js"></script>\n<script src="config.js"></script>\n<script src="js/api.js"></script>')
 i = s.index("const api = (url, method")
 j = s.index("r.json(); });", i) + len("r.json(); });")
 s = s[:i] + "const api = HC_API.api;  // 서버 대신 브라우저에서 업비트·바이낸스를 직접 호출(js/api.js)" + s[j:]

@@ -1,2 +1,4 @@
 __pycache__/
 tools/fixtures.json
+worker/wrangler.log
+worker/.wrangler/

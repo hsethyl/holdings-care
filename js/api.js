@@ -36,6 +36,14 @@
   const upLimiter = new Limiter(8), bnLimiter = new Limiter(28), bnData = new Limiter(3);
   const abort = {on: false};  // 켜지면 바이낸스 요청을 더 보내지 않는다
 
+  // 업비트 REST는 웹 출처(github.io)에서 분당 10회로 막혀 있어, 배포 환경에서는 Cloudflare Worker 프록시(worker/upbit-proxy.js)를 거친다.
+  // 주소: config.js의 HC_CONFIG.upbitProxy, 또는 한 번 열어 저장하는 ?proxy=https://...workers.dev
+  const isLocal = typeof location === "undefined" || ["localhost", "127.0.0.1"].includes(location.hostname);
+  try { const q = new URLSearchParams(location.search).get("proxy"); if (q) localStorage.setItem("hc_proxy", q); } catch { /* 저장 불가 */ }
+  let proxy = "";
+  try { proxy = localStorage.getItem("hc_proxy") || ""; } catch { /* 무시 */ }
+  proxy = (proxy || (root.HC_CONFIG && root.HC_CONFIG.upbitProxy) || "").replace(/\/+$/, "");
+
   const qs = p => p ? "?" + new URLSearchParams(Object.fromEntries(Object.entries(p).filter(([, v]) => v != null))) : "";
   async function netFetch(url, who) {
     try { return await fetch(url); } catch { throw new Error(`${who}에 연결하지 못했습니다(네트워크 또는 접속 제한). 잠시 뒤 다시 시도하세요`); }
@@ -43,7 +51,8 @@
   async function upGet(path, params) {
     for (let attempt = 0; attempt < 4; attempt++) {
       await upLimiter.acquire(1);
-      const r = await netFetch(`${UP}/${path}${qs(params)}`, "업비트");
+      if (!proxy && !isLocal) throw new Error("업비트 시세는 웹사이트에서 직접 호출할 수 없습니다(업비트 제한). 프록시 주소를 설정하세요: 주소 끝에 ?proxy=https://(내 Worker 주소) 를 붙여 한 번 여세요");
+      const r = await netFetch(`${proxy || UP}/${path}${qs(params)}`, "업비트");
       if (r.status === 429) { const w = 2 ** attempt; upLimiter.pause(w); await sleep(w * 1000); continue; }
       if (!r.ok) throw new Error(`업비트 ${r.status}`);
       return r.json();
